@@ -11,7 +11,11 @@ notes.get('/', (req, res) => {
             console.error(err);
             res.error('Error getting notes.');
         } else {
-            res.json(JSON.parse(data));
+            if (data.length === 0) {
+                res.json([]);
+            } else {
+                res.json(JSON.parse(data));
+            };
         }
     });
 });
@@ -34,17 +38,30 @@ notes.post('/', (req, res) => {
                 console.error(err);
                 res.error('Error getting notes.');
             } else {
-                const notesDatabase = JSON.parse(data);
-                notesDatabase.push(newNote);
+                if (data.length === 0) {
+                    const notesDatabase = [newNote];
 
-                fs.writeFile('./db/db.json', JSON.stringify(notesDatabase, null, 4), (err) => {
-                    if (err) {
-                        console.error(err);
-                        res.error('Error adding note.');
-                    } else {
-                        res.json(`Note added successfully.`);
-                    }
-                });
+                    fs.writeFile('./db/db.json', JSON.stringify(notesDatabase, null, 4), (err) => {
+                        if (err) {
+                            console.error(err);
+                            res.error('Error adding note.');
+                        } else {
+                            res.json(`Note added successfully.`);
+                        }
+                    });
+                } else {
+                    const notesDatabase = JSON.parse(data);
+                    notesDatabase.push(newNote);
+    
+                    fs.writeFile('./db/db.json', JSON.stringify(notesDatabase, null, 4), (err) => {
+                        if (err) {
+                            console.error(err);
+                            res.error('Error adding note.');
+                        } else {
+                            res.json(`Note added successfully.`);
+                        }
+                    });
+                };
             }
         });
     } else {
