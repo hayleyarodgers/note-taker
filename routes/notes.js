@@ -26,7 +26,7 @@ notes.post('/', (req, res) => {
         const newNote = {
             title,
             text,
-            note_id: uuidv4()
+            id: uuidv4()
         };
 
         fs.readFile('./db/db.json', 'utf8', (err, data) => {
@@ -67,7 +67,7 @@ notes.delete('/:ID', (req, res) => {
             const newNotesDatabase = [];
             
             for (let i = 0; i < existingNotesDatabase.length; i++) {
-                if (deletedNoteRequest !== existingNotesDatabase[i].note_id) {
+                if (deletedNoteRequest !== existingNotesDatabase[i].id) {
                     newNotesDatabase.push(existingNotesDatabase[i]);
                 }
             }
