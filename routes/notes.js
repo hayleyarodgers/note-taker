@@ -1,13 +1,19 @@
 const notes = require('express').Router();
-const { readFromFile, readAndAppend, writeToFile } = require('../helpers/fsUtils');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 // GET Route for retrieving all notes
 notes.get('/', (req, res) => {
     console.info(`${req.method} request received for notes.`);
 
-    readFromFile('./db/db.json')
-    .then((data) => res.json(JSON.parse(data)));
+    fs.readFile('./db/db.json', 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.error('Error getting notes.');
+        } else {
+            res.json(JSON.parse(data));
+        }
+    });
 });
 
 // POST Route for adding a new note
@@ -20,11 +26,27 @@ notes.post('/', (req, res) => {
         const newNote = {
             title,
             text,
-            note_id: uuidv4(),
+            note_id: uuidv4()
         };
 
-        readAndAppend(newNote, './db/db.json');
-        res.json(`Note added successfully.`);
+        fs.readFile('./db/db.json', 'utf8', (err, data) => {
+            if (err) {
+                console.error(err);
+                res.error('Error getting notes.');
+            } else {
+                const notesDatabase = JSON.parse(data);
+                notesDatabase.push(newNote);
+
+                fs.writeFile('./db/db.json', JSON.stringify(notesDatabase, null, 4), (err) => {
+                    if (err) {
+                        console.error(err);
+                        res.error('Error adding note.');
+                    } else {
+                        res.json(`Note added successfully.`);
+                    }
+                });
+            }
+        });
     } else {
         res.error('Error adding note.');
     }
@@ -36,19 +58,29 @@ notes.delete('/:ID', (req, res) => {
 
     const deletedNoteRequest = req.params.ID;
 
-    readFromFile('./db/db.json')
-    .then((data) => {
-        const parsedData = JSON.parse(data);
-        const newDatabase = [];
-        
-        for (let i = 0; i < parsedData.length; i++) {
-            if (deletedNoteRequest !== parsedData[i].note_id) {
-                newDatabase.push(parsedData[i]);
+    fs.readFile('./db/db.json', 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.error('Error getting notes.');
+        } else {
+            const existingNotesDatabase = JSON.parse(data);
+            const newNotesDatabase = [];
+            
+            for (let i = 0; i < existingNotesDatabase.length; i++) {
+                if (deletedNoteRequest !== existingNotesDatabase[i].note_id) {
+                    newNotesDatabase.push(existingNotesDatabase[i]);
+                }
             }
-        }
 
-        writeToFile('./db/db.json', newDatabase);
-        res.json(`Note deleted successfully.`);
+            fs.writeFile('./db/db.json', JSON.stringify(newNotesDatabase, null, 4), (err) => {
+                if (err) {
+                    console.error(err);
+                    res.error('Error deleting note.');
+                } else {
+                    res.json(`Note deleted successfully.`);
+                }
+            });
+        }
     });
 })
 
